@@ -1,10 +1,7 @@
-from re import I
 from time import perf_counter
 import urllib
 import os
 from PIL import Image, ImageQt, ImageOps, ImageEnhance
-from PyQt5.QtGui import QPixmap
-import io
 
 data = None
 images = {}

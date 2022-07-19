@@ -1,5 +1,3 @@
-import constants
-
 def get_orbit_angle(orbit, orbit_index, data):
     nodes_in_orbit = data['constants']['skillsPerOrbit']
 

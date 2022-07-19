@@ -1,9 +1,7 @@
-from msilib.schema import Error
 from PyQt5.QtWidgets import QGraphicsItem
 from PyQt5 import QtGui, QtCore, QtWidgets
 import image_manager
 from math import cos, sin, radians
-from PIL import Image
 
 class Node(QGraphicsItem):
     #TODO: don't just keep constants and groups in every node

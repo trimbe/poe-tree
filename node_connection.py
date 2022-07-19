@@ -1,7 +1,6 @@
 import math
 from PyQt5 import QtCore, QtGui, QtWidgets
 from util import get_orbit_angle
-from constants import constants
 from PIL import Image, ImageQt, ImageOps, ImageEnhance
 import image_manager
 
