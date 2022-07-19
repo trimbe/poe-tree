@@ -343,9 +343,6 @@ class SkillTreeView(QtWidgets.QGraphicsView):
         return node_id in self.data['nodes']['root']['out']
 
     def test_unreachable(self, node_id: str):
-        if self.is_root_node(node_id):
-            return
-
         start = perf_counter()
 
         self.nodes[node_id].toggle_active()

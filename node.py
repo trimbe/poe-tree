@@ -141,6 +141,9 @@ class Node(QGraphicsItem):
 
     def mouseReleaseEvent(self, event):
         print(f"Clicked on {self.name}, id: {self.id} - outs: {self.node_obj['out']}, ins: {self.node_obj['in']}")
+
+        if self.is_class_start:
+            return
         
         if self.is_mastery:
             item, ok = QtWidgets.QInputDialog.getItem(None, "Mastery", "Select a Mastery", [effect['stats'][0] for effect in self.mastery_effects], 0, False)
