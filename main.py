@@ -305,7 +305,7 @@ class SkillTreeView(QtWidgets.QGraphicsView):
             id = node[0]
             node_obj = node[1]
 
-            if node_obj.active and not self.is_root_node(id) and not node_obj.is_ascendancy_start:
+            if node_obj.active and not self.is_root_node(id) and not node_obj.is_ascendancy_start and not node_obj.is_multiple_choice_option:
                 num_nodes += 1
 
         self.allocated_points_changed.emit(num_nodes)
@@ -404,6 +404,13 @@ class SkillTreeView(QtWidgets.QGraphicsView):
         return corrected_path
 
     def allocate(self, node_id):
+        if self.nodes[node_id].is_multiple_choice_option: 
+            parent = self.data['nodes'][node_id]['in'][0]
+            parent = self.data['nodes'][parent]
+            for out in parent['out']:
+                if self.nodes[out].is_multiple_choice_option:
+                    self.nodes[out].active = False
+
         self.nodes[node_id].toggle_active()
 
         if self.nodes[node_id].is_notable:

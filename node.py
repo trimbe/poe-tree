@@ -20,6 +20,8 @@ class Node(QGraphicsItem):
             self.is_keystone = node_obj.get('isKeystone', False)
             self.is_jewel_socket = node_obj.get('isJewelSocket', False)
             self.is_ascendancy_start = node_obj.get('isAscendancyStart', False)
+            self.is_multiple_choice_option = node_obj.get('isMultipleChoiceOption', False)
+            self.is_multiple_choice = node_obj.get('isMultipleChoice', False)
             self.is_class_start = 'classStartIndex' in node_obj
             self.group_id = node_obj.get('group')
             if self.group_id is not None:
