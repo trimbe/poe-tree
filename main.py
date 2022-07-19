@@ -117,6 +117,10 @@ class SkillTreeView(QtWidgets.QGraphicsView):
             self.nodes[self.ascendancy_roots[ascendancy_name]].active = True
 
     def node_hovered(self, node):
+        if self.is_root_node(node.id):
+            self.hover_path = []
+            return
+
         shortest = ([], 999)
         id = node.id
         for node in self.nodes:
@@ -307,6 +311,9 @@ class SkillTreeView(QtWidgets.QGraphicsView):
         self.allocated_points_changed.emit(num_nodes)
 
     def allocate_to(self, target_id: str):
+        if self.is_root_node(target_id):
+            return
+
         start = perf_counter()
         shortest = ([], 999)
         start_end = ()
@@ -330,7 +337,11 @@ class SkillTreeView(QtWidgets.QGraphicsView):
         return node_id in self.data['nodes']['root']['out']
 
     def test_unreachable(self, node_id: str):
+        if self.is_root_node(node_id):
+            return
+
         start = perf_counter()
+
         self.nodes[node_id].toggle_active()
 
         unreachable = []
@@ -348,6 +359,9 @@ class SkillTreeView(QtWidgets.QGraphicsView):
         print(f"Test unreachable took {perf_counter() - start} seconds")
 
     def is_reachable(self, node_id: str, target_id: str):
+        if self.is_root_node(target_id):
+            return False
+
         def skip_criteria(id: str) -> bool:
             return ('isMastery' in self.data['nodes'][id]
                     or not self.nodes[id].active)
