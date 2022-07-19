@@ -124,6 +124,9 @@ class SkillTreeView(QtWidgets.QGraphicsView):
         shortest = ([], 999)
         id = node.id
         for node in self.nodes:
+            if self.nodes[node].ascendancy_name is None and self.nodes[id].ascendancy_name is not None:
+                continue
+
             if self.nodes[node].active and self.has_unallocated_neighbors(node) and not self.nodes[node].is_mastery:
                 path = self.find_shortest_path(node, id)
                 if len(path) < shortest[1]:
@@ -318,6 +321,9 @@ class SkillTreeView(QtWidgets.QGraphicsView):
         shortest = ([], 999)
         start_end = ()
         for node in self.nodes:
+            if self.nodes[node].ascendancy_name is None and self.nodes[target_id].ascendancy_name is not None:
+                continue
+
             if self.nodes[node].active and self.has_unallocated_neighbors(node) and not self.nodes[node].is_mastery:
                 path = self.find_shortest_path(node, target_id)
                 if len(path) < shortest[1]:
