@@ -43,6 +43,8 @@ class Node(QGraphicsItem):
             self.active = False
             self.on_hover_path = False
 
+            self.position = self.get_position()
+
             if not self.is_class_start and not self.is_ascendancy_start:
                 self.setCursor(QtCore.Qt.PointingHandCursor)
 
@@ -177,7 +179,6 @@ class Node(QGraphicsItem):
             angle = 360 / self.skills_per_orbit[self.orbit]
             angle = angle * self.orbit_index - 90
             
-        # TODO: why is all this stuff doubled?
         node_x = cos(radians(angle)) * ((self.orbit_radii[self.orbit]) * 0.3835) + self.node_group['x'] * 0.3835
         node_y = sin(radians(angle)) * ((self.orbit_radii[self.orbit]) * 0.3835) + self.node_group['y'] * 0.3835
 
@@ -191,7 +192,7 @@ class Node(QGraphicsItem):
 
         if self.is_mastery and self.tree.is_mastery_active(self.id):
             image = image_manager.get_images()['assets']['PassiveMasteryConnectedButton']
-        pos = self.get_position()
+        pos = self.position
         if pos is not None:
             return QtCore.QRectF(pos[0] - image.width() / 2, pos[1] - image.height() / 2, image.width(), image.height())
         else:
@@ -200,7 +201,7 @@ class Node(QGraphicsItem):
     def shape(self) -> QtGui.QPainterPath:
         path = QtGui.QPainterPath()
         icon_image = self.get_icon_image()
-        pos = self.get_position()
+        pos = self.position
 
         if pos is not None:
             if self.shape_radius > 0:
@@ -260,7 +261,7 @@ class Node(QGraphicsItem):
 
     def paint(self, painter, option, widget):
         icon_image = self.get_icon_image()
-        pos = self.get_position()
+        pos = self.position
         if pos is not None:
             if self.is_mastery and self.tree.is_mastery_active(self.id):
                 mastery_active_background = image_manager.get_images()['assets']['PassiveMasteryConnectedButton']

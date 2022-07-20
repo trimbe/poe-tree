@@ -122,12 +122,11 @@ class NodeConnection(QtWidgets.QGraphicsItem):
         if self.is_arc:
             group_center = (self.node_group['x'] * 0.3835, self.node_group['y'] * 0.3835)
             path_pos = QtCore.QPointF(group_center[0] - image.width() / 2, group_center[1] - image.height() / 2)
-            painter.drawPath(self.clip_path)
 
             painter.drawImage(path_pos, image)
         else:                
-            first_pos = self.first_node.get_position()
-            second_pos = self.second_node.get_position()
+            first_pos = self.first_node.position
+            second_pos = self.second_node.position
             dx = second_pos[0] - first_pos[0]
             dy = second_pos[1] - first_pos[1]
             angle = math.atan2(dy, dx) * 180 / math.pi
