@@ -64,15 +64,11 @@ class Node(QGraphicsItem):
 
     def hoverEnterEvent(self, event) -> None:
         if not self.is_class_start and not self.is_ascendancy_start:
-            self.tree.hovered_node = self
-
-        self.tree.node_hovered(self)
+            self.tree.node_hovered(self)
 
         return super().hoverEnterEvent(event)
 
     def hoverLeaveEvent(self, event) -> None:
-        self.tree.hovered_node = None
-
         self.tree.node_unhovered()
 
         return super().hoverLeaveEvent(event)

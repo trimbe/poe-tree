@@ -172,6 +172,11 @@ class SkillTreeView(QtWidgets.QGraphicsView):
             self.nodes[self.ascendancy_roots[ascendancy_name]].active = True
 
     def node_hovered(self, node):
+        if self.hovered_node == node:
+            return
+
+        self.hovered_node = node
+
         if self.is_root_node(node.id):
             self.hover_path = []
             return
@@ -192,10 +197,11 @@ class SkillTreeView(QtWidgets.QGraphicsView):
         for id in path:
             self.nodes[id].on_hover_path = True
 
-
     def node_unhovered(self):
         for id in self.hover_path:
             self.nodes[id].on_hover_path = False
+
+        self.hovered_node = None
 
     def paintEvent(self, event: QtGui.QPaintEvent) -> None:
         super().paintEvent(event)
