@@ -371,27 +371,18 @@ class SkillTreeView(QtWidgets.QGraphicsView):
                     continue
 
                 if next == end:
-                    path = [dist[at], next]
+                    path = dist[at] + [next]
                     q.clear()
                     break
 
                 if next not in dist:
-                    dist[next] = [dist[at], next]
+                    dist[next] = dist[at] + [next]
                     q.append(next)
 
         if path is None:
             return []
 
-        corrected_path = []
-
-        while len(path):
-            corrected_path.append(path.pop())
-            if len(path):
-                path = path.pop()
-
-        corrected_path.reverse()
-        
-        return corrected_path
+        return path
 
     def allocate(self, node_id: str) -> None:
         if self.nodes[node_id].is_multiple_choice_option: 
