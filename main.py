@@ -122,6 +122,11 @@ class SkillTreeView(QtWidgets.QGraphicsView):
         self.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
         self.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
 
+        self.tooltip_title_font = QtGui.QFont('Fontin', 18)
+        self.tooltip_stats_font = QtGui.QFont('Fontin', 10)
+        self.tooltip_title_metrics = QtGui.QFontMetrics(self.tooltip_title_font)
+        self.tooltip_stats_metrics = QtGui.QFontMetrics(self.tooltip_stats_font)
+
         self.scale(1, 1)
         self.painted = False
         self.icons = {}
@@ -203,13 +208,10 @@ class SkillTreeView(QtWidgets.QGraphicsView):
 
         node_data = self.data['nodes'][self.hovered_node.id]
 
-        title_metrics = QtGui.QFontMetrics(QtGui.QFont('Fontin', 18))
-        stat_metrics = QtGui.QFontMetrics(QtGui.QFont('Fontin', 10))
-
-        painter.setFont(QtGui.QFont('Fontin', 18))
+        painter.setFont(self.tooltip_title_font)
         
-        title_height = title_metrics.height() + 10
-        tooltip_width = title_metrics.width(node_data['name'])
+        title_height = self.tooltip_title_metrics.height() + 10
+        tooltip_width = self.tooltip_title_metrics.width(node_data['name'])
 
         stats = node_data['stats']
         
@@ -221,14 +223,14 @@ class SkillTreeView(QtWidgets.QGraphicsView):
         for stat in stats:
             if '\n' in stat:
                 for line in stat.split('\n'):
-                    tooltip_width = max(tooltip_width, stat_metrics.width(line.replace('\n', '')))
+                    tooltip_width = max(tooltip_width, self.tooltip_stats_metrics.width(line.replace('\n', '')))
             else:
-                tooltip_width = max(tooltip_width, stat_metrics.width(stat))
+                tooltip_width = max(tooltip_width, self.tooltip_stats_metrics.width(stat))
             
             stat_lines += stat.count('\n')
 
         width = tooltip_width + 20
-        height = stat_lines * (stat_metrics.height() + 5) + title_height + 5
+        height = stat_lines * (self.tooltip_stats_metrics.height() + 5) + title_height + 5
         pos = copy(self.scene_mouse_pos)
         # offset slightly from cursor
         pos.setX(pos.x() + 15)
@@ -254,7 +256,7 @@ class SkillTreeView(QtWidgets.QGraphicsView):
         painter.drawText(QtCore.QRectF(pos.x(), pos.y(), width, title_height), QtCore.Qt.AlignCenter, node_data['name'])
 
         offset = title_height
-        painter.setFont(QtGui.QFont('Fontin', 10))
+        painter.setFont(self.tooltip_stats_font)
         font_height = painter.fontMetrics().height()
         for i, stat in enumerate(stats):
             lines = 1 + stat.count('\n')
