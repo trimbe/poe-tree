@@ -152,20 +152,13 @@ class Node(QGraphicsItem):
 
             if ok:
                 print(item)
-                print(self.active_icon, self.inactive_icon)
                 self.selected_effect = item
 
         if self.active:
             self.tree.test_unreachable(self.id)
             return
-        # for connected in self.node_obj['out'] + self.node_obj['in']:
-        #     if self.tree.is_allocated(connected):
-        #         self.toggle_active()
-        #         self.update()
-        #         break
 
         self.tree.allocate_to(str(self.id))
-        print(self.active)
 
     def get_position(self):
         # TODO: handle clusters and passives given by jewels

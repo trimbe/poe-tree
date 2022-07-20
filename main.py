@@ -3,16 +3,11 @@ import io
 import json
 import sys
 from typing import Callable, List
-from unittest import skip
 from collections import deque
-from math import cos, radians, sin
-from operator import mod
-from time import perf_counter, perf_counter_ns
-from xmlrpc.client import Boolean
+from time import perf_counter
 
-import requests
 from PIL import Image, ImageOps, ImageQt
-from PyQt5 import QtCore, QtGui, QtWidgets, Qt
+from PyQt5 import QtCore, QtGui, QtWidgets
 
 import constants
 import image_manager
@@ -31,7 +26,7 @@ class MainWindow(QtWidgets.QMainWindow):
         with open('data.json') as f:
             self.data = json.load(f)
 
-        self.graphics_view = SkillTreeView()        
+        self.graphics_view = SkillTreeView()
         self.graphics_view.allocated_points_changed.connect(self.update_points)
         
         main_layout = QtWidgets.QVBoxLayout()
@@ -78,7 +73,6 @@ class MainWindow(QtWidgets.QMainWindow):
                 return
 
     def update_points(self, points):
-        print(points)
         self.points_label.setText(f"Points: {points}")
 
 class MainLayout(QtWidgets.QBoxLayout):
@@ -87,60 +81,6 @@ class MainLayout(QtWidgets.QBoxLayout):
 
 class SkillTreeView(QtWidgets.QGraphicsView):
     allocated_points_changed = QtCore.pyqtSignal(int)
-
-    def class_changed(self, class_index: int):
-        self.class_index = class_index
-        self.ascendancy_changed("None")
-
-        self.test_unreachable(self.class_roots[class_index])
-
-        for class_root in self.class_roots:
-            self.nodes[class_root].active = False
-        
-        self.nodes[self.class_roots[class_index]].active = True
-        self.viewport().update()
-
-    def ascendancy_changed(self, ascendancy_name):
-        for ascendancy_root in self.ascendancy_roots.items():
-            root_name = ascendancy_root[0]
-            root_id = ascendancy_root[1]
-            self.nodes[root_id].active = False
-
-            # some ascendancies span multiple groups so we can't just deallocate a group here
-            for node in self.nodes.values():
-                if node.ascendancy_name == root_name:
-                    node.active = False
-                    node.update()
-
-        if ascendancy_name != 'None' and len(ascendancy_name) > 0:
-            self.ascendancy = ascendancy_name
-            self.nodes[self.ascendancy_roots[ascendancy_name]].active = True
-
-    def node_hovered(self, node):
-        if self.is_root_node(node.id):
-            self.hover_path = []
-            return
-
-        shortest = ([], 999)
-        id = node.id
-        for node in self.nodes:
-            if self.nodes[node].ascendancy_name is None and self.nodes[id].ascendancy_name is not None:
-                continue
-
-            if self.nodes[node].active and self.has_unallocated_neighbors(node) and not self.nodes[node].is_mastery:
-                path = self.find_shortest_path(node, id)
-                if len(path) < shortest[1]:
-                    shortest = (path, len(path))
-
-        path = shortest[0]
-        self.hover_path = path
-        for id in path:
-            self.nodes[id].on_hover_path = True
-
-
-    def node_unhovered(self):
-        for id in self.hover_path:
-            self.nodes[id].on_hover_path = False
 
     def __init__(self):
         super().__init__()
@@ -196,6 +136,61 @@ class SkillTreeView(QtWidgets.QGraphicsView):
         QtGui.QFontDatabase.addApplicationFont('Fontin-Regular.ttf')
 
         self.build_tree()
+
+
+    def class_changed(self, class_index: int):
+        self.class_index = class_index
+        self.ascendancy_changed("None")
+
+        self.test_unreachable(self.class_roots[class_index])
+
+        for class_root in self.class_roots:
+            self.nodes[class_root].active = False
+        
+        self.nodes[self.class_roots[class_index]].active = True
+        self.viewport().update()
+
+    def ascendancy_changed(self, ascendancy_name):
+        for ascendancy_root in self.ascendancy_roots.items():
+            root_name = ascendancy_root[0]
+            root_id = ascendancy_root[1]
+            self.nodes[root_id].active = False
+
+            # some ascendancies span multiple groups so we can't just deallocate a group here
+            for node in self.nodes.values():
+                if node.ascendancy_name == root_name:
+                    node.active = False
+                    node.update()
+
+        if ascendancy_name != 'None' and len(ascendancy_name) > 0:
+            self.ascendancy = ascendancy_name
+            self.nodes[self.ascendancy_roots[ascendancy_name]].active = True
+
+    def node_hovered(self, node):
+        if self.is_root_node(node.id):
+            self.hover_path = []
+            return
+
+        shortest = ([], 999)
+        id = node.id
+        for node in self.nodes:
+            if self.nodes[node].ascendancy_name is None and self.nodes[id].ascendancy_name is not None:
+                continue
+
+            if self.nodes[node].active and self.has_unallocated_neighbors(node) and not self.nodes[node].is_mastery:
+                path = self.find_shortest_path(node, id)
+                if len(path) < shortest[1]:
+                    shortest = (path, len(path))
+
+        path = shortest[0]
+        self.hover_path = path
+        for id in path:
+            self.nodes[id].on_hover_path = True
+
+
+    def node_unhovered(self):
+        for id in self.hover_path:
+            self.nodes[id].on_hover_path = False
 
     def paintEvent(self, event: QtGui.QPaintEvent) -> None:
         super().paintEvent(event)
@@ -319,7 +314,6 @@ class SkillTreeView(QtWidgets.QGraphicsView):
 
         start = perf_counter()
         shortest = ([], 999)
-        start_end = ()
         for node in self.nodes:
             if self.nodes[node].ascendancy_name is None and self.nodes[target_id].ascendancy_name is not None:
                 continue
@@ -328,15 +322,12 @@ class SkillTreeView(QtWidgets.QGraphicsView):
                 path = self.find_shortest_path(node, target_id)
                 if len(path) < shortest[1]:
                     shortest = (path, len(path))
-                    start_end = (node, target_id)
 
         path = shortest[0]
         for node in path[1:]:
             self.allocate(node)
         
         print(f"Allocate to took {perf_counter() - start} seconds")
-        num_nodes = sum(1 for node in self.nodes if self.nodes[node].active)
-        print(f"Allocated {num_nodes} nodes")
         self.update_num_nodes()
 
     def is_root_node(self, node_id):
@@ -452,6 +443,8 @@ class SkillTreeView(QtWidgets.QGraphicsView):
         group_background_3.paste(group_background_3_base, (0, 0))
         group_background_3.paste(ImageOps.flip(group_background_3_base), (0, group_background_3_base.height))
 
+
+        # group backgrounds
         for group in self.data['groups'].items():
             group_data = group[1]
 
@@ -487,9 +480,7 @@ class SkillTreeView(QtWidgets.QGraphicsView):
                 self.scene().addItem(item)
                 continue
 
-
-        # PSStartNodeBackgroundInactive
-
+        # ascendancy backgrounds
         for group in self.data['groups'].items():
             group_data = group[1]
             nodes = group_data['nodes']
@@ -506,8 +497,8 @@ class SkillTreeView(QtWidgets.QGraphicsView):
                 self.scene().addItem(item)
                 continue
 
+        # nodes
         for node in self.data['nodes'].items():
-            # TODO: deal with class starting nodes
             if node[0] == 'root':
                 continue
 
@@ -523,6 +514,7 @@ class SkillTreeView(QtWidgets.QGraphicsView):
             self.nodes[node_obj.id] = node_obj
             self.scene().addItem(node_obj)
 
+        # connections
         for node in self.data['nodes'].values():
             if 'out' not in node:
                 continue

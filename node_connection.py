@@ -48,34 +48,6 @@ class NodeConnection(QtWidgets.QGraphicsItem):
     def boundingRect(self) -> QtCore.QRectF:
         return self.clip_path.boundingRect()
 
-    # TODO: don't do this in each connector
-    def generate_path_images(self):
-        images = {}
-
-        if self.is_arc:
-            filename = f"Orbit{self.first_node.orbit}"
-        else:
-            filename = f"LineConnector"
-
-        for state in ['Active', 'Intermediate', 'Normal']:
-            if self.is_arc:                
-                print(state)
-                base = Image.open(f"sprites/{filename}{state}.png")
-                if state == 'Intermediate':
-                    print("hit")
-                    base = ImageEnhance.Brightness(base).enhance(5)
-                combined = Image.new('RGBA', (base.width * 2, base.height * 2))
-                combined.paste(base, (0, 0))
-                combined.paste(ImageOps.mirror(base), (base.width, 0))
-                combined.paste(ImageOps.flip(base), (0, base.height))
-                combined.paste(ImageOps.mirror(ImageOps.flip(base)), (base.width, base.height))
-
-                images[state] = ImageQt.ImageQt(combined)
-            else:
-                images[state] = ImageQt.ImageQt(Image.open(f"sprites/{filename}{state}.png"))
-
-        return images
-    
     def generate_clip_path(self):
         first_pos = self.first_node.get_position()
         second_pos = self.second_node.get_position()
