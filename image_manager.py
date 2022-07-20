@@ -1,4 +1,5 @@
 from time import perf_counter
+from typing import Dict
 import urllib
 import os
 from PIL import Image, ImageQt, ImageOps, ImageEnhance
@@ -6,7 +7,7 @@ from PIL import Image, ImageQt, ImageOps, ImageEnhance
 data = None
 images = {}
 
-def init(data):
+def init(data: dict) -> None:
     # TODO: handle zoom levels properly perhaps
     # TODO: make this caching stuff less of a clusterfuck
     # TODO: not downloading orbits on first run?
@@ -87,5 +88,5 @@ def init(data):
 
     print(f"Initialized {len(images)} images in {perf_counter() - begin_init} seconds")
 
-def get_images():
+def get_images() -> Dict[str, Dict[str, ImageQt.ImageQt]]:
     return images

@@ -1,3 +1,4 @@
+from typing import Union
 from PyQt5.QtWidgets import QGraphicsItem
 from PyQt5 import QtGui, QtCore, QtWidgets
 import image_manager
@@ -5,7 +6,7 @@ from math import cos, sin, radians
 
 class Node(QGraphicsItem):
     #TODO: don't just keep constants and groups in every node
-    def __init__(self, node_obj, constants, groups, tree):
+    def __init__(self, node_obj: dict, constants: dict, groups: dict, tree):
         super().__init__()
         try:
             self.node_obj = node_obj
@@ -53,7 +54,7 @@ class Node(QGraphicsItem):
             self.shape_radius = self.get_shape_radius()
 
             self.setAcceptHoverEvents(True)
-            self.setFlag(QGraphicsItem.ItemIsSelectable)
+            self.setFlag(QGraphicsItem.ItemIsSelectable, True)
 
         except KeyError as e:
             print(e)
@@ -62,18 +63,18 @@ class Node(QGraphicsItem):
 
         self.active = False
 
-    def hoverEnterEvent(self, event) -> None:
+    def hoverEnterEvent(self, event: QtWidgets.QGraphicsSceneHoverEvent) -> None:
         if not self.is_class_start and not self.is_ascendancy_start:
             self.tree.node_hovered(self)
 
         return super().hoverEnterEvent(event)
 
-    def hoverLeaveEvent(self, event) -> None:
+    def hoverLeaveEvent(self, event: QtWidgets.QGraphicsSceneHoverEvent) -> None:
         self.tree.node_unhovered()
 
         return super().hoverLeaveEvent(event)
 
-    def get_shape_radius(self):
+    def get_shape_radius(self) -> float:
         if self.get_frame_image() is None:
             return 0
 
@@ -86,7 +87,7 @@ class Node(QGraphicsItem):
 
         return y_pos * 1.3
     
-    def get_icon_image(self):
+    def get_icon_image(self) -> QtGui.QImage:
         # TODO: jewel slots
         category = "normal"
         if self.is_keystone:
@@ -126,25 +127,18 @@ class Node(QGraphicsItem):
             else:
                 return image_manager.get_images()[category][self.inactive_icon] 
 
-    def toggle_active(self):
+    def toggle_active(self) -> None:
         self.active = not self.active
         self.update()
 
-    def activate_mastery(self):
-        self.active = True
-        self.update()
-
-    def mousePressEvent(self, event):
-        super().mousePressEvent(event)
-
-    def mouseReleaseEvent(self, event):
+    def mouseReleaseEvent(self, event: QtWidgets.QGraphicsSceneMouseEvent) -> None:
         print(f"Clicked on {self.name}, id: {self.id} - outs: {self.node_obj['out']}, ins: {self.node_obj['in']}")
 
         if self.is_class_start:
             return
         
         if self.is_mastery:
-            item, ok = QtWidgets.QInputDialog.getItem(None, "Mastery", "Select a Mastery", [effect['stats'][0] for effect in self.mastery_effects], 0, False)
+            item, ok = QtWidgets.QInputDialog.getItem(self.tree, "Mastery", "Select a Mastery", [effect['stats'][0] for effect in self.mastery_effects], 0, False)
 
             if ok:
                 print(item)
@@ -156,7 +150,7 @@ class Node(QGraphicsItem):
 
         self.tree.allocate_to(str(self.id))
 
-    def get_position(self):
+    def get_position(self) -> Union[tuple, None]:
         # TODO: handle clusters and passives given by jewels
         if self.orbit_index is None or self.orbit is None:
             return None        
@@ -173,7 +167,7 @@ class Node(QGraphicsItem):
 
         return (node_x, node_y)
 
-    def boundingRect(self):
+    def boundingRect(self) -> QtCore.QRectF:
         if self.get_frame_image() is not None:
             image = image_manager.get_images()['assets'][self.get_frame_image()]
         else:
@@ -201,7 +195,7 @@ class Node(QGraphicsItem):
         else:
             return path
 
-    def get_frame_image(self):
+    def get_frame_image(self) -> Union[str, None]:
         if ('isAscendancyStart' in self.node_obj
             or 'classStartIndex' in self.node_obj):
             return None
@@ -248,7 +242,7 @@ class Node(QGraphicsItem):
         path += "Active" if self.active else ""
         return path        
 
-    def paint(self, painter, option, widget):
+    def paint(self, painter: QtGui.QPainter, option: QtWidgets.QStyleOptionGraphicsItem, widget: QtWidgets.QWidget) -> None:
         icon_image = self.get_icon_image()
         pos = self.position
         if pos is not None:

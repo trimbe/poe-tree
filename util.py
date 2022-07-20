@@ -1,4 +1,4 @@
-def get_orbit_angle(orbit, orbit_index, data):
+def get_orbit_angle(orbit: int, orbit_index: int, data: dict) -> float:
     nodes_in_orbit = data['constants']['skillsPerOrbit']
 
     if orbit == 2 or orbit == 3:

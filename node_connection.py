@@ -1,11 +1,12 @@
 import math
 from PyQt5 import QtCore, QtGui, QtWidgets
+from node import Node
 from util import get_orbit_angle
 from PIL import Image, ImageQt, ImageOps, ImageEnhance
 import image_manager
 
 class NodeConnection(QtWidgets.QGraphicsItem):
-    def __init__(self, first_node, second_node, data):
+    def __init__(self, first_node: Node, second_node: Node, data: dict) -> None:
         super().__init__()
         self.first_node = first_node
         self.second_node = second_node
@@ -29,7 +30,7 @@ class NodeConnection(QtWidgets.QGraphicsItem):
         self.image += "Active" if self.active else "Normal"
         self.clip_path = self.generate_clip_path()
 
-    def get_state(self):
+    def get_state(self) -> str:
         if self.first_node.active and self.second_node.active:
             return "Active"
         elif self.first_node.on_hover_path and self.second_node.on_hover_path:
@@ -39,7 +40,7 @@ class NodeConnection(QtWidgets.QGraphicsItem):
         else:
             return "Normal"
 
-    def get_connector_name(self):
+    def get_connector_name(self) -> str:
         if self.is_arc:
             return f"Orbit{self.first_node.orbit}{self.get_state()}"
         else:
@@ -48,7 +49,7 @@ class NodeConnection(QtWidgets.QGraphicsItem):
     def boundingRect(self) -> QtCore.QRectF:
         return self.clip_path.boundingRect()
 
-    def generate_clip_path(self):
+    def generate_clip_path(self) -> QtGui.QPainterPath:
         first_pos = self.first_node.get_position()
         second_pos = self.second_node.get_position()
 
@@ -81,9 +82,9 @@ class NodeConnection(QtWidgets.QGraphicsItem):
 
         return stroke
 
-    def paint(self, painter, option, widget):
+    def paint(self, painter: QtGui.QPainter, option: QtWidgets.QStyleOptionGraphicsItem, widget: QtWidgets.QWidget) -> None:
         painter.setClipPath(self.clip_path)
-        painter.setRenderHint(QtGui.QPainter.Antialiasing, True)    
+        painter.setRenderHint(QtGui.QPainter.RenderHint.Antialiasing, True)    
 
         state = self.get_state()
         image = image_manager.get_images()['connectors'][self.get_connector_name()]

@@ -39,7 +39,7 @@ class MainWindow(QtWidgets.QMainWindow):
         controls_widget.setLayout(controls_layout)
 
         self.points_label = QtWidgets.QLabel()
-        self.points_label.setAlignment(QtCore.Qt.AlignCenter)
+        self.points_label.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
         self.points_label.setFixedHeight(30)
         self.points_label.setText("Points: 0")
 
@@ -63,7 +63,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.setCentralWidget(QtWidgets.QWidget())
         self.centralWidget().setLayout(main_layout)
 
-    def populate_ascendancies(self, class_name):
+    def populate_ascendancies(self, class_name: str) -> None:
         self.ascendancy_selection.clear()
         self.ascendancy_selection.addItem('None')
         for clazz in self.data['classes']:
@@ -72,12 +72,12 @@ class MainWindow(QtWidgets.QMainWindow):
                     self.ascendancy_selection.addItem(ascendancy['name'])   
                 return
 
-    def update_points(self, points):
+    def update_points(self, points: int) -> None:
         self.points_label.setText(f"Points: {points}")
 
 class MainLayout(QtWidgets.QBoxLayout):
     def __init__(self, parent, *args, **kwargs):
-        super().__init__(QtWidgets.QBoxLayout.TopToBottom, parent, *args, **kwargs)
+        super().__init__(QtWidgets.QBoxLayout.Direction.TopToBottom, parent, *args, **kwargs)
 
 class SkillTreeView(QtWidgets.QGraphicsView):
     allocated_points_changed = QtCore.pyqtSignal(int)
@@ -88,12 +88,12 @@ class SkillTreeView(QtWidgets.QGraphicsView):
         with open('data.json') as f:
             self.data = json.load(f)
 
-        self.class_roots = [None] * len(self.data['classes'])
+        self.class_roots = [""] * len(self.data['classes'])
         for root_node in self.data['nodes']['root']['out']:
             self.class_roots[self.data['nodes'][root_node]['classStartIndex']] = root_node
 
         self.ascendancy_roots = {}
-        self.class_index = None
+        self.class_index = 0
         self.ascendancy = None
 
         constants.init(self.data['constants'])
@@ -107,20 +107,22 @@ class SkillTreeView(QtWidgets.QGraphicsView):
 
         self.setScene(QtWidgets.QGraphicsScene())
         self.setSceneRect(min_x - 1000, min_y - 1000, max_x - min_x, max_y - min_y)
-        self.setRenderHint(QtGui.QPainter.Antialiasing)
+        self.setRenderHint(QtGui.QPainter.RenderHint.Antialiasing)
 
-        self.setDragMode(QtWidgets.QGraphicsView.ScrollHandDrag)
+        self.setDragMode(QtWidgets.QGraphicsView.DragMode.ScrollHandDrag)
         # setting the drag mode also sets the cursor, so unset it to have an arrow instead
         self.viewport().unsetCursor()
-        self.setTransformationAnchor(QtWidgets.QGraphicsView.AnchorUnderMouse)
-        self.setResizeAnchor(QtWidgets.QGraphicsView.AnchorViewCenter)
+        self.setTransformationAnchor(QtWidgets.QGraphicsView.ViewportAnchor.AnchorUnderMouse)
+        self.setResizeAnchor(QtWidgets.QGraphicsView.ViewportAnchor.AnchorViewCenter)
 
         self.setWindowTitle("Skill Tree View")
 
-        self.setBackgroundBrush(QtGui.QBrush(QtGui.QColor(8, 13, 18), QtCore.Qt.SolidPattern))
+        self.setBackgroundBrush(QtGui.QBrush(QtGui.QColor(8, 13, 18), QtCore.Qt.BrushStyle.SolidPattern))
 
-        self.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
-        self.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
+        self.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+
+        QtGui.QFontDatabase.addApplicationFont('Fontin-Regular.ttf')
 
         self.tooltip_title_font = QtGui.QFont('Fontin', 18)
         self.tooltip_stats_font = QtGui.QFont('Fontin', 10)
@@ -128,22 +130,17 @@ class SkillTreeView(QtWidgets.QGraphicsView):
         self.tooltip_stats_metrics = QtGui.QFontMetrics(self.tooltip_stats_font)
 
         self.scale(1, 1)
-        self.painted = False
-        self.icons = {}
-        self.clickable_items = []
 
         self.nodes = {}
 
         self.hovered_node = None
         self.hover_path = []
-        self.scene_mouse_pos = None
-
-        QtGui.QFontDatabase.addApplicationFont('Fontin-Regular.ttf')
+        self.scene_mouse_pos = QtCore.QPoint()
 
         self.build_tree()
 
 
-    def class_changed(self, class_index: int):
+    def class_changed(self, class_index: int) -> None:
         self.class_index = class_index
         self.ascendancy_changed("None")
 
@@ -155,7 +152,7 @@ class SkillTreeView(QtWidgets.QGraphicsView):
         self.nodes[self.class_roots[class_index]].active = True
         self.viewport().update()
 
-    def ascendancy_changed(self, ascendancy_name):
+    def ascendancy_changed(self, ascendancy_name: str) -> None:
         for ascendancy_root in self.ascendancy_roots.items():
             root_name = ascendancy_root[0]
             root_id = ascendancy_root[1]
@@ -171,7 +168,7 @@ class SkillTreeView(QtWidgets.QGraphicsView):
             self.ascendancy = ascendancy_name
             self.nodes[self.ascendancy_roots[ascendancy_name]].active = True
 
-    def node_hovered(self, node):
+    def node_hovered(self, node: Node) -> None:
         if self.hovered_node == node:
             return
 
@@ -183,12 +180,12 @@ class SkillTreeView(QtWidgets.QGraphicsView):
 
         shortest = ([], 999)
         id = node.id
-        for node in self.nodes:
-            if self.nodes[node].ascendancy_name is None and self.nodes[id].ascendancy_name is not None:
+        for start_id in self.nodes:
+            if self.nodes[start_id].ascendancy_name is None and self.nodes[id].ascendancy_name is not None:
                 continue
 
-            if self.nodes[node].active and self.has_unallocated_neighbors(node) and not self.nodes[node].is_mastery:
-                path = self.find_shortest_path(node, id)
+            if self.nodes[start_id].active and self.has_unallocated_neighbors(start_id) and not self.nodes[start_id].is_mastery:
+                path = self.find_shortest_path(start_id, id)
                 if len(path) < shortest[1]:
                     shortest = (path, len(path))
 
@@ -197,7 +194,7 @@ class SkillTreeView(QtWidgets.QGraphicsView):
         for id in path:
             self.nodes[id].on_hover_path = True
 
-    def node_unhovered(self):
+    def node_unhovered(self) -> None:
         for id in self.hover_path:
             self.nodes[id].on_hover_path = False
 
@@ -207,7 +204,7 @@ class SkillTreeView(QtWidgets.QGraphicsView):
         super().paintEvent(event)
 
         painter = QtGui.QPainter(self.viewport())
-        painter.setRenderHint(QtGui.QPainter.Antialiasing)
+        painter.setRenderHint(QtGui.QPainter.RenderHint.Antialiasing)
 
         if self.hovered_node is None:
             return
@@ -255,18 +252,18 @@ class SkillTreeView(QtWidgets.QGraphicsView):
 
         tooltip_path = QtGui.QPainterPath()
         tooltip_path.addRoundedRect(tooltip_rect, 10, 10)
-        painter.strokePath(tooltip_path, QtGui.QPen(QtCore.Qt.white, 1))
+        painter.strokePath(tooltip_path, QtGui.QPen(QtGui.QColorConstants.White, 1))
         painter.fillPath(tooltip_path, QtGui.QBrush(QtGui.QColor(0, 0, 0, 200)))
 
         painter.setPen(QtGui.QColor(117, 116, 111))
-        painter.drawText(QtCore.QRectF(pos.x(), pos.y(), width, title_height), QtCore.Qt.AlignCenter, node_data['name'])
+        painter.drawText(QtCore.QRectF(pos.x(), pos.y(), width, title_height), QtCore.Qt.AlignmentFlag.AlignCenter, node_data['name'])
 
         offset = title_height
         painter.setFont(self.tooltip_stats_font)
         font_height = painter.fontMetrics().height()
         for i, stat in enumerate(stats):
             lines = 1 + stat.count('\n')
-            painter.drawText(QtCore.QRectF(pos.x() + 10, pos.y() + offset, width, (font_height + 5) * lines), QtCore.Qt.AlignVCenter, stat)
+            painter.drawText(QtCore.QRectF(pos.x() + 10, pos.y() + offset, width, (font_height + 5) * lines), QtCore.Qt.AlignmentFlag.AlignVCenter, stat)
             offset += font_height + 5
 
         self.viewport().update()
@@ -283,20 +280,11 @@ class SkillTreeView(QtWidgets.QGraphicsView):
 
     def mousePressEvent(self, event: QtGui.QMouseEvent) -> None:
         super().mousePressEvent(event)
-        event.ignore()
         self.viewport().setCursor(QtCore.Qt.CursorShape.ClosedHandCursor)
 
     def mouseReleaseEvent(self, event: QtGui.QMouseEvent) -> None:
         super().mouseReleaseEvent(event)
-        event.ignore()
         self.viewport().unsetCursor()
-
-    def is_allocated(self, node_id: str):
-        return self.nodes[node_id].active
-
-    def is_connected(self, node_id: str, target_id: str):
-        connected = self.nodes[node_id]['out'] + self.nodes[node_id]['in']
-        return target_id in connected
 
     def has_unallocated_neighbors(self, node_id: str):
         for neighbor in self.data['nodes'][node_id]['out'] + self.data['nodes'][node_id]['in']:
@@ -305,7 +293,7 @@ class SkillTreeView(QtWidgets.QGraphicsView):
 
         return False
 
-    def update_num_nodes(self):
+    def update_num_nodes(self) -> None:
         num_nodes = 0
         for node in self.nodes.items():
             id = node[0]
@@ -316,7 +304,7 @@ class SkillTreeView(QtWidgets.QGraphicsView):
 
         self.allocated_points_changed.emit(num_nodes)
 
-    def allocate_to(self, target_id: str):
+    def allocate_to(self, target_id: str) -> None:
         if self.is_root_node(target_id):
             return
 
@@ -338,10 +326,10 @@ class SkillTreeView(QtWidgets.QGraphicsView):
         print(f"Allocate to took {perf_counter() - start} seconds")
         self.update_num_nodes()
 
-    def is_root_node(self, node_id):
+    def is_root_node(self, node_id: str) -> bool:
         return node_id in self.data['nodes']['root']['out']
 
-    def test_unreachable(self, node_id: str):
+    def test_unreachable(self, node_id: str) -> None:
         start = perf_counter()
 
         self.nodes[node_id].toggle_active()
@@ -360,7 +348,7 @@ class SkillTreeView(QtWidgets.QGraphicsView):
 
         print(f"Test unreachable took {perf_counter() - start} seconds")
 
-    def is_reachable(self, node_id: str, target_id: str):
+    def is_reachable(self, node_id: str, target_id: str) -> bool:
         if self.is_root_node(target_id):
             return False
 
@@ -405,7 +393,7 @@ class SkillTreeView(QtWidgets.QGraphicsView):
         
         return corrected_path
 
-    def allocate(self, node_id):
+    def allocate(self, node_id: str) -> None:
         if self.nodes[node_id].is_multiple_choice_option: 
             parent = self.data['nodes'][node_id]['in'][0]
             parent = self.data['nodes'][parent]
@@ -421,13 +409,12 @@ class SkillTreeView(QtWidgets.QGraphicsView):
                     self.nodes[neighbor].update()
 
 
-    def is_mastery_active(self, mastery_id):
+    def is_mastery_active(self, mastery_id: str) -> bool:
         connected = self.data['nodes'][mastery_id]['out'] + self.data['nodes'][mastery_id]['in']
 
         return any(self.nodes[node].active for node in connected)
 
-    def find_shortest_path(self, start: str, end: str):
-        # TODO: use current selected ascendancy 
+    def find_shortest_path(self, start: str, end: str) -> List[str]:
         end_in_ascendant = 'ascendancyName' in self.data['nodes'][end] and self.data['nodes'][end]['ascendancyName'] == self.ascendancy       
 
         def skip_criteria(id) -> bool:
@@ -444,7 +431,7 @@ class SkillTreeView(QtWidgets.QGraphicsView):
         group_background_2 = image_manager.get_images()['assets']['PSGroupBackground2']
         group_background_3_base = image_manager.get_images()['assets']['PSGroupBackground3']
         buffer = QtCore.QBuffer()
-        buffer.open(QtCore.QBuffer.ReadWrite)
+        buffer.open(QtCore.QIODevice.OpenModeFlag.ReadWrite)
         group_background_3_base.save(buffer, "PNG")
         group_background_3_base = Image.open(io.BytesIO(buffer.data()))
         group_background_3 = Image.new('RGBA', (group_background_3_base.width, group_background_3_base.height * 2))
