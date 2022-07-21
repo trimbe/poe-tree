@@ -178,16 +178,21 @@ class SkillTreeView(QtWidgets.QGraphicsView):
             self.hover_path = []
             return
 
+        start_time = perf_counter()
+        num = 0
         shortest = ([], 999)
         id = node.id
         for start_id in self.nodes:
             if self.nodes[start_id].ascendancy_name is None and self.nodes[id].ascendancy_name is not None:
                 continue
-
+            
             if self.nodes[start_id].active and self.has_unallocated_neighbors(start_id) and not self.nodes[start_id].is_mastery:
+                num += 1
                 path = self.find_shortest_path(start_id, id)
                 if len(path) < shortest[1]:
                     shortest = (path, len(path))
+        
+        print(f"{num} nodes evaluated in {perf_counter() - start_time} seconds")
 
         path = shortest[0]
         self.hover_path = path
@@ -308,18 +313,24 @@ class SkillTreeView(QtWidgets.QGraphicsView):
         if self.is_root_node(target_id):
             return
 
+        path = []
         start = perf_counter()
-        shortest = ([], 999)
-        for node in self.nodes:
-            if self.nodes[node].ascendancy_name is None and self.nodes[target_id].ascendancy_name is not None:
-                continue
 
-            if self.nodes[node].active and self.has_unallocated_neighbors(node) and not self.nodes[node].is_mastery:
-                path = self.find_shortest_path(node, target_id)
-                if len(path) < shortest[1]:
-                    shortest = (path, len(path))
+        if self.nodes[target_id] == self.hovered_node:
+            path = self.hover_path
+        else:
+            shortest = ([], 999)
+            for node in self.nodes:
+                if self.nodes[node].ascendancy_name is None and self.nodes[target_id].ascendancy_name is not None:
+                    continue
 
-        path = shortest[0]
+                if self.nodes[node].active and self.has_unallocated_neighbors(node) and not self.nodes[node].is_mastery:
+                    path = self.find_shortest_path(node, target_id)
+                    if len(path) < shortest[1]:
+                        shortest = (path, len(path))
+
+            path = shortest[0]
+
         for node in path[1:]:
             self.allocate(node)
         
