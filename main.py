@@ -264,7 +264,7 @@ class SkillTreeView(QtWidgets.QGraphicsView):
         for i, stat in enumerate(stats):
             lines = 1 + stat.count('\n')
             painter.drawText(QtCore.QRectF(pos.x() + 10, pos.y() + offset, width, (font_height + 5) * lines), QtCore.Qt.AlignmentFlag.AlignVCenter, stat)
-            offset += font_height + 5
+            offset += (font_height + 5) * lines
 
         self.viewport().update(QtCore.QRect(pos.x() - 10, pos.y() - 10, width + 20, height + 20))
 
