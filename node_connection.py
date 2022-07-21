@@ -77,7 +77,7 @@ class NodeConnection(QtWidgets.QGraphicsItem):
 
         stroker = QtGui.QPainterPathStroker()
         stroker.setCapStyle(QtCore.Qt.FlatCap)
-        stroker.setWidth(28)
+        stroker.setWidth(14)
         stroke = stroker.createStroke(connection_path)
 
         return stroke
