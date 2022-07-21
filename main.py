@@ -266,7 +266,7 @@ class SkillTreeView(QtWidgets.QGraphicsView):
             painter.drawText(QtCore.QRectF(pos.x() + 10, pos.y() + offset, width, (font_height + 5) * lines), QtCore.Qt.AlignmentFlag.AlignVCenter, stat)
             offset += font_height + 5
 
-        self.viewport().update()
+        self.viewport().update(QtCore.QRect(pos.x() - 10, pos.y() - 10, width + 20, height + 20))
 
     def wheelEvent(self, event: QtGui.QWheelEvent) -> None:
         if event.angleDelta().y() > 0:
@@ -368,6 +368,9 @@ class SkillTreeView(QtWidgets.QGraphicsView):
             at = q.popleft()
             for next in self.data['nodes'][at]['out'] + self.data['nodes'][at]['in']:
                 if skip_criteria(next):
+                    continue
+
+                if next != end and next != start and self.is_root_node(next):
                     continue
 
                 if next == end:
