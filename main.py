@@ -174,30 +174,45 @@ class SkillTreeView(QtWidgets.QGraphicsView):
 
         self.hovered_node = node
 
+        self.hover_path = self.path_to(node)
+        for id in self.hover_path:
+            self.nodes[id].on_hover_path = True
+
+    def path_to(self, node: Node) -> List[str]:
         if self.is_root_node(node.id):
-            self.hover_path = []
-            return
+            return []
+
+        visited = []
 
         start_time = perf_counter()
         num = 0
         shortest = ([], 999)
         id = node.id
         for start_id in self.nodes:
+            if start_id in visited:
+                continue
+
             if self.nodes[start_id].ascendancy_name is None and self.nodes[id].ascendancy_name is not None:
                 continue
             
             if self.nodes[start_id].active and self.has_unallocated_neighbors(start_id) and not self.nodes[start_id].is_mastery:
                 num += 1
                 path = self.find_shortest_path(start_id, id)
+
+                visited += path
+                last_active_index = None
+                for i, node in enumerate(path):
+                    if self.nodes[node].active:
+                        last_active_index = i
+                if last_active_index is not None:
+                    path = path[last_active_index:]
+
                 if len(path) < shortest[1]:
-                    shortest = (path, len(path))
+                    shortest = (path, len(path))                
         
         print(f"{num} nodes evaluated in {perf_counter() - start_time} seconds")
 
-        path = shortest[0]
-        self.hover_path = path
-        for id in path:
-            self.nodes[id].on_hover_path = True
+        return shortest[0]
 
     def node_unhovered(self) -> None:
         for id in self.hover_path:
@@ -319,17 +334,7 @@ class SkillTreeView(QtWidgets.QGraphicsView):
         if self.nodes[target_id] == self.hovered_node:
             path = self.hover_path
         else:
-            shortest = ([], 999)
-            for node in self.nodes:
-                if self.nodes[node].ascendancy_name is None and self.nodes[target_id].ascendancy_name is not None:
-                    continue
-
-                if self.nodes[node].active and self.has_unallocated_neighbors(node) and not self.nodes[node].is_mastery:
-                    path = self.find_shortest_path(node, target_id)
-                    if len(path) < shortest[1]:
-                        shortest = (path, len(path))
-
-            path = shortest[0]
+            path = self.path_to(self.nodes[target_id])
 
         for node in path[1:]:
             self.allocate(node)
