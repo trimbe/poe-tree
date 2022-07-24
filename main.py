@@ -169,12 +169,14 @@ class SkillTreeView(QtWidgets.QGraphicsView):
             self.nodes[self.ascendancy_roots[ascendancy_name]].active = True
 
     def node_hovered(self, node: Node) -> None:
-        if self.hovered_node == node:
+        if self.hovered_node == node or node.active:
             return
 
         self.hovered_node = node
 
         self.hover_path = self.path_to(node)
+        self.hover_path.reverse()
+
         for id in self.hover_path:
             self.nodes[id].on_hover_path = True
 
@@ -182,37 +184,7 @@ class SkillTreeView(QtWidgets.QGraphicsView):
         if self.is_root_node(node.id):
             return []
 
-        visited = []
-
-        start_time = perf_counter()
-        num = 0
-        shortest = ([], 999)
-        id = node.id
-        for start_id in self.nodes:
-            if start_id in visited:
-                continue
-
-            if self.nodes[start_id].ascendancy_name is None and self.nodes[id].ascendancy_name is not None:
-                continue
-            
-            if self.nodes[start_id].active and self.has_unallocated_neighbors(start_id) and not self.nodes[start_id].is_mastery:
-                num += 1
-                path = self.find_shortest_path(start_id, id)
-
-                visited += path
-                last_active_index = None
-                for i, node in enumerate(path):
-                    if self.nodes[node].active:
-                        last_active_index = i
-                if last_active_index is not None:
-                    path = path[last_active_index:]
-
-                if len(path) < shortest[1]:
-                    shortest = (path, len(path))                
-        
-        print(f"{num} nodes evaluated in {perf_counter() - start_time} seconds")
-
-        return shortest[0]
+        return self.find_shortest_path(node.id)
 
     def node_unhovered(self) -> None:
         for id in self.hover_path:
@@ -376,7 +348,7 @@ class SkillTreeView(QtWidgets.QGraphicsView):
 
         return len(path) > 0
 
-    def bfs(self, start: str, end: str, skip_criteria: Callable[[str], bool] = lambda x: False) -> List[str]:
+    def bfs(self, start: str, skip_criteria: Callable[[str], bool] = lambda x: False) -> List[str]:
         path = None
         dist = {start: [start]}
         q = deque([start])
@@ -386,10 +358,10 @@ class SkillTreeView(QtWidgets.QGraphicsView):
                 if skip_criteria(next):
                     continue
 
-                if next != end and next != start and self.is_root_node(next):
+                if not self.nodes[next].active and next != start and self.is_root_node(next):
                     continue
 
-                if next == end:
+                if self.nodes[next].active:
                     path = dist[at] + [next]
                     q.clear()
                     break
@@ -424,7 +396,7 @@ class SkillTreeView(QtWidgets.QGraphicsView):
 
         return any(self.nodes[node].active for node in connected)
 
-    def find_shortest_path(self, start: str, end: str) -> List[str]:
+    def find_shortest_path(self, end: str) -> List[str]:
         end_in_ascendant = 'ascendancyName' in self.data['nodes'][end] and self.data['nodes'][end]['ascendancyName'] == self.ascendancy       
 
         def skip_criteria(id) -> bool:
@@ -434,7 +406,7 @@ class SkillTreeView(QtWidgets.QGraphicsView):
             #  or id in self.class_roots
             return ('isMastery' in self.data['nodes'][id])
 
-        return self.bfs(start, end, skip_criteria)
+        return self.bfs(end, skip_criteria)
 
     def build_tree(self) -> None:
         group_background_1 = image_manager.get_images()['assets']['PSGroupBackground1']
