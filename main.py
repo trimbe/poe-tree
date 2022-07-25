@@ -344,11 +344,11 @@ class SkillTreeView(QtWidgets.QGraphicsView):
             return ('isMastery' in self.data['nodes'][id]
                     or not self.nodes[id].active)
 
-        path = self.bfs(node_id, target_id, skip_criteria)
+        path = self.bfs(node_id, skip_criteria, target_id)
 
         return len(path) > 0
 
-    def bfs(self, start: str, skip_criteria: Callable[[str], bool] = lambda x: False) -> List[str]:
+    def bfs(self, start: str, skip_criteria: Callable[[str], bool] = lambda x: False, end: str = None) -> List[str]:
         path = None
         dist = {start: [start]}
         q = deque([start])
@@ -358,10 +358,11 @@ class SkillTreeView(QtWidgets.QGraphicsView):
                 if skip_criteria(next):
                     continue
 
-                if not self.nodes[next].active and next != start and self.is_root_node(next):
+                is_end = (end is not None and next == end) 
+                if (not self.nodes[next].active and not is_end) and next != start and self.is_root_node(next):
                     continue
 
-                if self.nodes[next].active:
+                if is_end or (end is None and self.nodes[next].active):
                     path = dist[at] + [next]
                     q.clear()
                     break
@@ -401,6 +402,9 @@ class SkillTreeView(QtWidgets.QGraphicsView):
 
         def skip_criteria(id) -> bool:
             if not end_in_ascendant and 'ascendancyName' in self.data['nodes'][id]:
+                return not self.nodes[id].active
+
+            if end_in_ascendant and 'ascendancyName' not in self.data['nodes'][id]:
                 return not self.nodes[id].active
 
             #  or id in self.class_roots
