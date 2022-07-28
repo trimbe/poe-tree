@@ -1,47 +1,34 @@
 from time import perf_counter
 from typing import Dict
+from requests.utils import urlparse
 import urllib
 import os
 from PIL import Image, ImageQt, ImageOps, ImageEnhance
+import threading
 
 data = None
 images = {}
 
 def init(data: dict) -> None:
-    # TODO: handle zoom levels properly perhaps
-    # TODO: make this caching stuff less of a clusterfuck
-    # TODO: not downloading orbits on first run?
     data = data
     begin_init = perf_counter()
     
     # sprites
+    threads = []
     for sheet in data['skillSprites'].items():
-        sprite_category = {}
-        sheet_type = sheet[0]
-        sprite_sheet = sheet[1][-1]
-
-        parsed_url = urllib.parse.urlparse(sprite_sheet['filename'])
-        filename = os.path.basename(parsed_url.path)
-        ver = parsed_url.query
-        full_filename = f"{filename}_{ver}.png"
-        
-        os.makedirs("sprites/", exist_ok=True)
-
-        if not os.path.exists(f"sprites/{full_filename}"):
-            urllib.request.urlretrieve(sprite_sheet['filename'], f"sprites/{full_filename}")
-        
-        img = Image.open(f"sprites/{full_filename}")
-        
-        for skill in sprite_sheet['coords'].items():
-            skill_path = skill[0]
-            coords = skill[1]
-
-            sprite = img.crop((coords['x'], coords['y'], 
-                                coords['x'] + coords['w'], coords['y'] + coords['h']))
-
-            sprite_category[skill_path] = ImageQt.ImageQt(sprite) 
-
-        images[sheet_type] = sprite_category                   
+        thread = threading.Thread(target=get_and_split_sheet, args=(sheet,))
+        thread.start()
+        threads.append(thread)
+    
+    #assets
+    images['assets'] = {}
+    for asset in data['assets'].items():
+        thread = threading.Thread(target=get_asset, args=(asset,))
+        thread.start()
+        threads.append(thread)
+    
+    for thread in threads:
+        thread.join()                   
 
     images['connectors'] = {}
     # generate connector images
@@ -70,23 +57,47 @@ def init(data: dict) -> None:
             img = ImageEnhance.Brightness(img).enhance(3)
             images['connectors'][f"LineConnectorHoverPath"] = ImageQt.ImageQt(img)
 
-
-    #assets
-    images['assets'] = {}
-    for asset in data['assets'].items():
-        asset_name = asset[0]
-        asset_image = list(asset[1].values())[-1]
-        filename = asset_image.split('/')[-1]
-
-        if not os.path.exists(f"sprites/{filename}"):
-            urllib.request.urlretrieve(asset_image, f"sprites/{filename}")
-        
-        img = Image.open(f"sprites/{filename}")
-        img = img.convert('RGBA')
-        images['assets'][asset_name] = ImageQt.ImageQt(img)
-
-
     print(f"Initialized {len(images)} images in {perf_counter() - begin_init} seconds")
+
+def get_asset(asset: dict) -> None:
+    asset_name = asset[0]
+    asset_image = list(asset[1].values())[-1]
+    filename = asset_image.split('/')[-1]
+
+    if not os.path.exists(f"sprites/{filename}"):
+        urllib.request.urlretrieve(asset_image, f"sprites/{filename}")
+    
+    img = Image.open(f"sprites/{filename}")
+    img = img.convert('RGBA')
+    images['assets'][asset_name] = ImageQt.ImageQt(img)
+
+def get_and_split_sheet(sheet: dict) -> None:    
+    sprite_category = {}
+    sheet_type = sheet[0]
+    sprite_sheet = sheet[1][-1]
+
+    parsed_url = urlparse(sprite_sheet['filename'])
+    filename = os.path.basename(parsed_url.path)
+    ver = parsed_url.query
+    full_filename = f"{filename}_{ver}.png"
+    
+    os.makedirs("sprites/", exist_ok=True)
+
+    if not os.path.exists(f"sprites/{full_filename}"):
+        urllib.request.urlretrieve(sprite_sheet['filename'], f"sprites/{full_filename}")
+
+    img = Image.open(f"sprites/{full_filename}")
+        
+    for skill in sprite_sheet['coords'].items():
+        skill_path = skill[0]
+        coords = skill[1]
+
+        sprite = img.crop((coords['x'], coords['y'], 
+                            coords['x'] + coords['w'], coords['y'] + coords['h']))
+
+        sprite_category[skill_path] = ImageQt.ImageQt(sprite) 
+
+    images[sheet_type] = sprite_category    
 
 def get_images() -> Dict[str, Dict[str, ImageQt.ImageQt]]:
     return images
